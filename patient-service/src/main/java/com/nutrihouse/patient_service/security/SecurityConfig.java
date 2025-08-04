@@ -1,0 +1,35 @@
+package com.nutrihouse.patient_service.security;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Configuration
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                // Endpoint pubblici (se ne hai)
+                .requestMatchers("/api/health", "/actuator/**").permitAll()
+                // Endpoint che richiedono specifici ruoli
+                .requestMatchers("/api/pazienti/create").hasAnyRole("ADMIN", "NUTRITIONIST")
+                .requestMatchers("/api/pazienti/**").hasAnyRole("ADMIN", "NUTRITIONIST")
+                // Tutti gli altri endpoint richiedono autenticazione
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+}
