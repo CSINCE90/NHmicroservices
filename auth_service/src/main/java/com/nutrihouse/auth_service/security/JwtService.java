@@ -5,11 +5,19 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import com.nutrihouse.auth_service.model.User;
+import com.nutrihouse.auth_service.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
 
     @Value("${jwt.secret}")
@@ -19,6 +27,8 @@ public class JwtService {
     private long expiration; // es. 86400000 → 1 giorno
 
     private Key key;
+    
+    private final UserRepository userRepository;
 
     @PostConstruct
     public void init() {
@@ -26,7 +36,21 @@ public class JwtService {
     }
 
     public String generateToken(String username) {
+        // Recupera l'utente per ottenere i ruoli
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("Utente non trovato"));
+        
+        // Estrai i ruoli dell'utente
+        List<String> roles = user.getRoles().stream()
+                .map(role -> role.getName())
+                .collect(Collectors.toList());
+        
+        // Crea i claims con i ruoli
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", roles);
+        
         return Jwts.builder()
+                .setClaims(claims)
                 .setSubject(username)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
