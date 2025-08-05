@@ -4,7 +4,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 
 // Layout
-import Layout from './components/layout/Layout';
+import Layout from './components/layout/layout';
 import PrivateRoute from './components/layout/PrivateRoute';
 
 // Pages
