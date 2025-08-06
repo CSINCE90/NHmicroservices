@@ -36,7 +36,7 @@ public class PazienteController {
     @Operation(summary = "Crea nuovo paziente", description = "Crea un nuovo paziente nel sistema")
     @ApiResponse(responseCode = "201", description = "Paziente creato con successo")
     @ApiResponse(responseCode = "400", description = "Dati paziente non validi")
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<PazienteDTO> createPaziente(
             @Valid @RequestBody PazienteDTO pazienteDTO) {
         
