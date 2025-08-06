@@ -81,9 +81,14 @@ const PatientDetail = () => {
       const patientData = await patientService.getPatient(id);
       setPatient(patientData);
       
-      // Load visits for this patient (when endpoint is available)
-      // For now, we'll use an empty array
-      setVisits([]);
+    // 🔧 AGGIUNGI: Carica le visite reali del paziente
+    try {
+      const visitData = await patientService.getVisiteByPaziente(id);
+      setVisits(visitData);
+    } catch (visitError) {
+      console.warn('Errore nel caricamento visite:', visitError);
+      setVisits([]); // Fallback a lista vuota
+    }
       
     } catch {
       setError('Errore nel caricamento dei dati del paziente');
@@ -231,6 +236,7 @@ const PatientDetail = () => {
           variant="outlined"
           startIcon={<Edit />}
           sx={{ mr: 1 }}
+          onClick={() => navigate(`/pazienti/${id}/modifica`)}
         >
           Modifica
         </Button>
@@ -238,6 +244,7 @@ const PatientDetail = () => {
           variant="outlined"
           color="error"
           startIcon={<Delete />}
+          onClick={() => navigate(`/pazienti/${id}/elimina`)}
         >
           Elimina
         </Button>

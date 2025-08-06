@@ -13,6 +13,8 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Patients from './pages/Patients';
 import PatientDetail from './pages/PatientDetail';
+import EditPatient from './pages/EditPatient';
+import DeletePatient from './pages/DeletePatient';
 
 function App() {
   const { loading } = useAuth();
@@ -37,6 +39,8 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/pazienti" element={<Patients />} />
         <Route path="/pazienti/:id" element={<PatientDetail />} />
+        <Route path="/pazienti/:id/modifica" element={<EditPatient />} />
+        <Route path="/pazienti/:id/elimina" element={<DeletePatient />} />
       </Route>
       
       {/* 404 */}
