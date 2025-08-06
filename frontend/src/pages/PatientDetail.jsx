@@ -84,7 +84,8 @@ const PatientDetail = () => {
     // 🔧 AGGIUNGI: Carica le visite reali del paziente
     try {
       const visitData = await patientService.getVisiteByPaziente(id);
-      setVisits(visitData);
+      const normalized = Array.isArray(visitData) ? visitData : (visitData ? [visitData] : []);
+      setVisits(normalized);
     } catch (visitError) {
       console.warn('Errore nel caricamento visite:', visitError);
       setVisits([]); // Fallback a lista vuota
