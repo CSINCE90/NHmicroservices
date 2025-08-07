@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { patientService } from '../services/patientService';
+import { foodService } from '../services/foodService';
 import {
   Container,
   Grid,
@@ -28,6 +29,8 @@ import {
   Assignment,
   Schedule,
   Person,
+  Restaurant,
+  Add as AddIcon,
 } from '@mui/icons-material';
 
 const Dashboard = () => {
@@ -37,7 +40,9 @@ const Dashboard = () => {
   const [error, setError] = useState('');
   const [stats, setStats] = useState({
     totalPatients: 0,
+    totalFoods: 0,
     recentPatients: [],
+    recentFoods: [],
     upcomingVisits: [],
   });
 
@@ -53,10 +58,25 @@ const Dashboard = () => {
       // Carica i pazienti
       const patients = await patientService.getAllPatients();
       
+      // Carica gli alimenti
+      let foods = [];
+      try {
+        foods = await foodService.getAllFoods();
+      } catch (foodError) {
+        console.warn('Errore nel caricamento alimenti:', foodError);
+        // Non bloccare la dashboard se il servizio alimenti non è disponibile
+      }
+      
       // Calcola statistiche
       const totalPatients = patients.length;
+      const totalFoods = foods.length;
       const recentPatients = patients
         .sort((a, b) => new Date(b.dataCreazione) - new Date(a.dataCreazione))
+        .slice(0, 5);
+
+      // Gli alimenti più recenti (se disponibili)
+      const recentFoods = foods
+        .sort((a, b) => (b.id || 0) - (a.id || 0))
         .slice(0, 5);
 
       // Per ora simuliamo le visite prossime (da implementare quando avremo l'endpoint)
@@ -64,7 +84,9 @@ const Dashboard = () => {
 
       setStats({
         totalPatients,
+        totalFoods,
         recentPatients,
+        recentFoods,
         upcomingVisits,
       });
     } catch (err) {
@@ -146,7 +168,25 @@ const Dashboard = () => {
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <CalendarToday sx={{ fontSize: 40, color: 'secondary.main', mr: 2 }} />
+                <Restaurant sx={{ fontSize: 40, color: 'secondary.main', mr: 2 }} />
+                <Box>
+                  <Typography color="textSecondary" gutterBottom>
+                    Alimenti Database
+                  </Typography>
+                  <Typography variant="h4">
+                    {stats.totalFoods}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <CalendarToday sx={{ fontSize: 40, color: 'info.main', mr: 2 }} />
                 <Box>
                   <Typography color="textSecondary" gutterBottom>
                     Visite Oggi
@@ -164,25 +204,7 @@ const Dashboard = () => {
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <TrendingUp sx={{ fontSize: 40, color: 'success.main', mr: 2 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Nuovi Pazienti
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats.recentPatients.length}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Assignment sx={{ fontSize: 40, color: 'warning.main', mr: 2 }} />
+                <Assignment sx={{ fontSize: 40, color: 'success.main', mr: 2 }} />
                 <Box>
                   <Typography color="textSecondary" gutterBottom>
                     Piani Attivi
@@ -214,17 +236,17 @@ const Dashboard = () => {
               </Button>
               <Button
                 variant="outlined"
+                startIcon={<Restaurant />}
+                onClick={() => navigate('/alimenti')}
+              >
+                Gestisci Alimenti
+              </Button>
+              <Button
+                variant="outlined"
                 startIcon={<Schedule />}
                 onClick={() => navigate('/pazienti')}
               >
                 Programma Visita
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<People />}
-                onClick={() => navigate('/pazienti')}
-              >
-                Vedi Tutti i Pazienti
               </Button>
             </Box>
           </Paper>
@@ -241,8 +263,12 @@ const Dashboard = () => {
                 <Chip label={stats.totalPatients} size="small" color="primary" />
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2">Database Alimenti:</Typography>
+                <Chip label={stats.totalFoods} size="small" color="secondary" />
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography variant="body2">Visite Questo Mese:</Typography>
-                <Chip label="0" size="small" color="secondary" />
+                <Chip label="0" size="small" color="info" />
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography variant="body2">Piani Nutrizionali:</Typography>
@@ -253,7 +279,7 @@ const Dashboard = () => {
         </Grid>
       </Grid>
 
-      {/* Recent Patients */}
+      {/* Recent Items */}
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
@@ -310,16 +336,75 @@ const Dashboard = () => {
           <Paper sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6">
-                Prossime Visite
+                Alimenti Recenti
               </Typography>
-              <Button size="small">
-                Vedi Calendario
+              <Button
+                size="small"
+                onClick={() => navigate('/alimenti')}
+              >
+                Vedi Database
               </Button>
             </Box>
             
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
-              Nessuna visita programmata
-            </Typography>
+            {stats.recentFoods.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 3 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Database alimenti vuoto
+                </Typography>
+                <Button
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={() => navigate('/alimenti')}
+                  variant="outlined"
+                >
+                  Aggiungi Alimenti
+                </Button>
+              </Box>
+            ) : (
+              <List>
+                {stats.recentFoods.map((food, index) => (
+                  <div key={food.id}>
+                    <ListItem sx={{ px: 0 }}>
+                      <ListItemIcon>
+                        <Restaurant />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={food.name}
+                        secondary={
+                          <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+                            <Chip 
+                              label={`${food.calories || 0} kcal`} 
+                              size="small" 
+                              variant="outlined"
+                              color="error"
+                            />
+                            <Chip 
+                              label={`P: ${food.protein || 0}g`} 
+                              size="small" 
+                              variant="outlined"
+                              color="primary"
+                            />
+                            <Chip 
+                              label={`C: ${food.carbs || 0}g`} 
+                              size="small" 
+                              variant="outlined"
+                              color="warning"
+                            />
+                            <Chip 
+                              label={`F: ${food.fat || 0}g`} 
+                              size="small" 
+                              variant="outlined"
+                              color="info"
+                            />
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                    {index < stats.recentFoods.length - 1 && <Divider />}
+                  </div>
+                ))}
+              </List>
+            )}
           </Paper>
         </Grid>
       </Grid>

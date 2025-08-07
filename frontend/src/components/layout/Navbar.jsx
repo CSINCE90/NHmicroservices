@@ -15,6 +15,7 @@ import {
   AccountCircle,
   Dashboard,
   People,
+  Restaurant,
   ExitToApp
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -75,6 +76,10 @@ const Navbar = () => {
         <People sx={{ mr: 1 }} />
         Pazienti
       </MenuItem>
+      <MenuItem onClick={() => handleNavigation('/alimenti')}>
+        <Restaurant sx={{ mr: 1 }} />
+        Alimenti
+      </MenuItem>
       <MenuItem onClick={handleLogout}>
         <ExitToApp sx={{ mr: 1 }} />
         Logout
@@ -107,6 +112,10 @@ const Navbar = () => {
         <People sx={{ mr: 1 }} />
         Pazienti
       </MenuItem>
+      <MenuItem onClick={() => handleNavigation('/alimenti')}>
+        <Restaurant sx={{ mr: 1 }} />
+        Alimenti
+      </MenuItem>
       <MenuItem onClick={handleLogout}>
         <ExitToApp sx={{ mr: 1 }} />
         Logout
@@ -138,7 +147,7 @@ const Navbar = () => {
               color="inherit"
               startIcon={<Dashboard />}
               onClick={() => navigate('/dashboard')}
-              sx={{ mr: 2 }}
+              sx={{ mr: 1 }}
             >
               Dashboard
             </Button>
@@ -146,9 +155,17 @@ const Navbar = () => {
               color="inherit"
               startIcon={<People />}
               onClick={() => navigate('/pazienti')}
-              sx={{ mr: 2 }}
+              sx={{ mr: 1 }}
             >
               Pazienti
+            </Button>
+            <Button
+              color="inherit"
+              startIcon={<Restaurant />}
+              onClick={() => navigate('/alimenti')}
+              sx={{ mr: 2 }}
+            >
+              Alimenti
             </Button>
             
             <IconButton
@@ -161,7 +178,7 @@ const Navbar = () => {
               color="inherit"
             >
               <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
-                {user?.username?.charAt(0).toUpperCase() || <AccountCircle />}
+                {user?.email?.charAt(0).toUpperCase() || <AccountCircle />}
               </Avatar>
             </IconButton>
           </Box>
