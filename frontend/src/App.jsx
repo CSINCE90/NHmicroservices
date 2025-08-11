@@ -26,6 +26,12 @@ import FoodDetail from './pages/FoodDetails';
 import EditFood from './pages/EditFood';
 import DeleteFood from './pages/DeleteFood';
 
+// Pages - Meals
+import MealPlansPage from './pages/MealPlansPage';
+import MealPlanDetail from './pages/MealPlanDetail';
+import EditMealPlan from './pages/EditMealPlan';
+import DeleteMealPlan from './pages/DeleteMealPlan';
+
 function App() {
   const { loading } = useAuth();
 
