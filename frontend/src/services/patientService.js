@@ -28,10 +28,10 @@ export const patientService = {
   },
 
   // Visite
-  getAllVisits: async () => {
+  /*getAllVisits: async () => {
     const response = await api.get(`${PATIENT_API_URL}/visite`);
     return response.data;
-  },
+  },*/
 
   /**
    * Ritorna tutte le visite associate a uno specifico paziente.

@@ -120,7 +120,21 @@ const Register = () => {
         }}
       >
         <Paper elevation={3} sx={{ padding: 4, width: '100%' }}>
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Box sx={{ textAlign: 'center', mb: 4 }}>
+            {/* Logo */}
+            <Box sx={{ mb: 2 }}>
+              <img
+                src="/nutrihouse-logo.png"
+                alt="NutriHouse Logo"
+                style={{
+                  height: '80px',
+                  width: 'auto',
+                  objectFit: 'contain',
+                }}
+              />
+            </Box>
+            
+            {/* Titolo applicazione */}
             <Typography component="h1" variant="h4" color="primary" gutterBottom>
               NutriHouse
             </Typography>
