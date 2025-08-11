@@ -1,3 +1,4 @@
+// frontend/src/App.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -21,16 +22,19 @@ import EditPatient from './pages/EditPatient';
 import DeletePatient from './pages/DeletePatient';
 
 // Pages - Foods
-import Foods from './pages/foods';
+import Foods from './pages/Foods';
 import FoodDetail from './pages/FoodDetails';
 import EditFood from './pages/EditFood';
 import DeleteFood from './pages/DeleteFood';
 
-// Pages - Meals
+// Pages - Meal Plans
 import MealPlansPage from './pages/MealPlansPage';
 import MealPlanDetail from './pages/MealPlanDetail';
-import EditMealPlan from './pages/EditMealPlan';
-import DeleteMealPlan from './pages/DeleteMealPlan';
+//import CreateMealPlan from './pages/CreateMealPlan';
+//import EditMealPlan from './pages/EditMealPlan';
+//import DeleteMealPlan from './pages/DeleteMealPlan';
+import MealDayEditor from './pages/MealDayEditor';
+//import CreateMealItem from './pages/CreateMealItem';
 
 function App() {
   const { loading } = useAuth();
@@ -65,6 +69,17 @@ function App() {
         <Route path="/alimenti/:id" element={<FoodDetail />} />
         <Route path="/alimenti/:id/modifica" element={<EditFood />} />
         <Route path="/alimenti/:id/elimina" element={<DeleteFood />} />
+        
+        {/* Rotte Piani Alimentari */}
+        <Route path="/piani-alimentari" element={<MealPlansPage />} />
+
+        <Route path="/piani-alimentari/:id" element={<MealPlanDetail />} />
+        
+        {/* Rotte Giorni Piano Alimentare */}
+        <Route path="/piani-alimentari/giorni/:dayId/modifica" element={<MealDayEditor />} />
+        
+        {/* Rotte Items Pasti */}
+        <Route path="/piani-alimentari/giorni/:dayId/items/nuovo" element={<CreateMealItem />} />
       </Route>
       
       {/* 404 */}

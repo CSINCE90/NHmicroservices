@@ -1,10 +1,17 @@
+// frontend/src/services/dietService.js
 import api from './api';
 import { DIET_API_URL } from '../utils/constants';
 
 export const dietService = {
   // Meal Plans - CRUD Operations
   getAllMealPlans: async () => {
-    const response = await api.get(`${DIET_API_URL}/paziente/all`);
+    // Per ora usiamo un endpoint fittizio, dovrai implementarlo nel backend
+    const response = await api.get(`${DIET_API_URL}/plans/all`);
+    return response.data;
+  },
+
+  getMealPlansByPaziente: async (pazienteId) => {
+    const response = await api.get(`${DIET_API_URL}/paziente/${pazienteId}`);
     return response.data;
   },
 
@@ -27,11 +34,12 @@ export const dietService = {
 
   deleteMealPlan: async (id) => {
     await api.delete(`${DIET_API_URL}/${id}`);
+    return true;
   },
 
   // Meal Days - CRUD Operations
-  getMealDay: async (id) => {
-    const response = await api.get(`${DIET_API_URL}/days/${id}`);
+  getMealDay: async (dayId) => {
+    const response = await api.get(`${DIET_API_URL}/days/${dayId}`);
     return response.data;
   },
 
@@ -54,11 +62,12 @@ export const dietService = {
 
   deleteMealDay: async (dayId) => {
     await api.delete(`${DIET_API_URL}/days/${dayId}`);
+    return true;
   },
 
   // Meal Items - CRUD Operations
-  getMealItem: async (id) => {
-    const response = await api.get(`${DIET_API_URL}/items/${id}`);
+  getMealItem: async (itemId) => {
+    const response = await api.get(`${DIET_API_URL}/items/${itemId}`);
     return response.data;
   },
 
@@ -79,5 +88,6 @@ export const dietService = {
 
   deleteMealItem: async (itemId) => {
     await api.delete(`${DIET_API_URL}/items/${itemId}`);
+    return true;
   }
 };

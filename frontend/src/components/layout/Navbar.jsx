@@ -8,7 +8,8 @@ import {
   Menu,
   MenuItem,
   Box,
-  Avatar
+  Avatar,
+  Divider
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -16,6 +17,7 @@ import {
   Dashboard,
   People,
   Restaurant,
+  Assignment,
   ExitToApp
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -72,6 +74,7 @@ const Navbar = () => {
         <Dashboard sx={{ mr: 1 }} />
         Dashboard
       </MenuItem>
+      <Divider />
       <MenuItem onClick={() => handleNavigation('/pazienti')}>
         <People sx={{ mr: 1 }} />
         Pazienti
@@ -80,7 +83,12 @@ const Navbar = () => {
         <Restaurant sx={{ mr: 1 }} />
         Alimenti
       </MenuItem>
-      <MenuItem onClick={handleLogout}>
+      <MenuItem onClick={() => handleNavigation('/piani-alimentari')}>
+        <Assignment sx={{ mr: 1 }} />
+        Piani Alimentari
+      </MenuItem>
+      <Divider />
+      <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
         <ExitToApp sx={{ mr: 1 }} />
         Logout
       </MenuItem>
@@ -116,7 +124,12 @@ const Navbar = () => {
         <Restaurant sx={{ mr: 1 }} />
         Alimenti
       </MenuItem>
-      <MenuItem onClick={handleLogout}>
+      <MenuItem onClick={() => handleNavigation('/piani-alimentari')}>
+        <Assignment sx={{ mr: 1 }} />
+        Piani Alimentari
+      </MenuItem>
+      <Divider />
+      <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
         <ExitToApp sx={{ mr: 1 }} />
         Logout
       </MenuItem>
@@ -125,7 +138,7 @@ const Navbar = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="fixed">
+      <AppBar position="fixed" elevation={2}>
         <Toolbar>
           <Typography
             variant="h6"
@@ -134,11 +147,12 @@ const Navbar = () => {
             sx={{ 
               flexGrow: 1,
               cursor: 'pointer',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              letterSpacing: '0.5px'
             }}
             onClick={() => navigate('/dashboard')}
           >
-            NutriHouse
+            🥗 NutriHouse
           </Typography>
 
           {/* Desktop Navigation */}
@@ -147,7 +161,12 @@ const Navbar = () => {
               color="inherit"
               startIcon={<Dashboard />}
               onClick={() => navigate('/dashboard')}
-              sx={{ mr: 1 }}
+              sx={{ 
+                mr: 1,
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
             >
               Dashboard
             </Button>
@@ -155,7 +174,12 @@ const Navbar = () => {
               color="inherit"
               startIcon={<People />}
               onClick={() => navigate('/pazienti')}
-              sx={{ mr: 1 }}
+              sx={{ 
+                mr: 1,
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
             >
               Pazienti
             </Button>
@@ -163,9 +187,27 @@ const Navbar = () => {
               color="inherit"
               startIcon={<Restaurant />}
               onClick={() => navigate('/alimenti')}
-              sx={{ mr: 2 }}
+              sx={{ 
+                mr: 1,
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
             >
               Alimenti
+            </Button>
+            <Button
+              color="inherit"
+              startIcon={<Assignment />}
+              onClick={() => navigate('/piani-alimentari')}
+              sx={{ 
+                mr: 2,
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
+            >
+              Piani Alimentari
             </Button>
             
             <IconButton
@@ -176,8 +218,19 @@ const Navbar = () => {
               aria-haspopup="true"
               onClick={handleProfileMenuOpen}
               color="inherit"
+              sx={{
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
             >
-              <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
+              <Avatar sx={{ 
+                width: 32, 
+                height: 32, 
+                bgcolor: 'secondary.main',
+                fontSize: '0.875rem',
+                fontWeight: 'bold'
+              }}>
                 {user?.email?.charAt(0).toUpperCase() || <AccountCircle />}
               </Avatar>
             </IconButton>
