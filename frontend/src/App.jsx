@@ -27,14 +27,8 @@ import FoodDetail from './pages/FoodDetails';
 import EditFood from './pages/EditFood';
 import DeleteFood from './pages/DeleteFood';
 
-// Pages - Meal Plans
-import MealPlansPage from './pages/MealPlansPage';
-import MealPlanDetail from './pages/MealPlanDetail';
-//import CreateMealPlan from './pages/CreateMealPlan';
-//import EditMealPlan from './pages/EditMealPlan';
-//import DeleteMealPlan from './pages/DeleteMealPlan';
-import MealDayEditor from './pages/MealDayEditor';
-//import CreateMealItem from './pages/CreateMealItem';
+// Pages - Diet Plans (NEW simplified structure)
+import DietPlans from './pages/DietPlans';
 
 function App() {
   const { loading } = useAuth();
@@ -70,16 +64,8 @@ function App() {
         <Route path="/alimenti/:id/modifica" element={<EditFood />} />
         <Route path="/alimenti/:id/elimina" element={<DeleteFood />} />
         
-        {/* Rotte Piani Alimentari */}
-        <Route path="/piani-alimentari" element={<MealPlansPage />} />
-
-        <Route path="/piani-alimentari/:id" element={<MealPlanDetail />} />
-        
-        {/* Rotte Giorni Piano Alimentare */}
-        <Route path="/piani-alimentari/giorni/:dayId/modifica" element={<MealDayEditor />} />
-        
-        {/* Rotte Items Pasti */}
-        <Route path="/piani-alimentari/giorni/:dayId/items/nuovo" element={<CreateMealItem />} />
+        {/* Rotta Piani Alimentari - SEMPLIFICATA */}
+        <Route path="/piani-alimentari" element={<DietPlans />} />
       </Route>
       
       {/* 404 */}
