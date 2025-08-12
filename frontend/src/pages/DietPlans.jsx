@@ -40,17 +40,11 @@ import {
 } from '@mui/material';
 import {
   Add,
-  Search,
-  Restaurant,
   Person,
-  CalendarToday,
   Edit,
   Delete,
   ContentCopy,
   Refresh,
-  Download,
-  Print,
-  Visibility,
 } from '@mui/icons-material';
 
 const DietPlans = () => {
@@ -69,8 +63,6 @@ const DietPlans = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [tabValue, setTabValue] = useState(0);
-  // eslint-disable-next-line no-empty-pattern
-  const [] = useState('');
   
   // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -96,35 +88,54 @@ const DietPlans = () => {
     fats: 0,
   });
 
+  // ---- Effects ----
   useEffect(() => {
     loadInitialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (selectedPatient) {
       loadPlanTitles();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPatient]);
 
   useEffect(() => {
     if (selectedPatient && selectedPlanTitle) {
       loadPlanData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPatient, selectedPlanTitle]);
 
+  // ricalcola i valori nutrizionali quando cambia quantità o alimento
+  useEffect(() => {
+    if (!formData.foodId) return;
+    const food = foods.find(f => f.id === formData.foodId);
+    if (!food) return;
+    const factor = (Number(formData.quantity) || 0) / 100;
+    setFormData(prev => ({
+      ...prev,
+      calories: (food.calories || 0) * factor,
+      proteins: (food.protein || 0) * factor,
+      carbs: (food.carbs || 0) * factor,
+      fats: (food.fat || 0) * factor,
+    }));
+  }, [formData.foodId, formData.quantity, foods]);
+
+  // ---- Loaders ----
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      
-      // Carica pazienti
+      setError('');
+
       const patientsData = await patientService.getAllPatients();
       setPatients(patientsData);
-      
-      // Carica alimenti
+
       const foodsData = await foodService.getAllFoods();
       setFoods(foodsData);
-      
-    } catch{
+    } catch (err) {
+      console.error('Errore nel caricamento iniziale:', err);
       setError('Errore nel caricamento dei dati');
       enqueueSnackbar('Errore nel caricamento dei dati', { variant: 'error' });
     } finally {
@@ -134,12 +145,16 @@ const DietPlans = () => {
 
   const loadPlanTitles = async () => {
     if (!selectedPatient) return;
-    
+
     try {
+      // reset selezione piano quando cambio paziente
+      setSelectedPlanTitle('');
+      setPlanItems([]);
+      setPlanSummary(null);
+
       const titles = await dietService.getPlanTitles(selectedPatient.id);
       setPlanTitles(titles);
-      
-      if (titles.length > 0 && !selectedPlanTitle) {
+      if (titles.length > 0) {
         setSelectedPlanTitle(titles[0]);
       }
     } catch (err) {
@@ -150,24 +165,21 @@ const DietPlans = () => {
 
   const loadPlanData = async () => {
     if (!selectedPatient || !selectedPlanTitle) return;
-    
+
     try {
       setLoading(true);
-      
-      // Carica elementi del piano
+
       const items = await dietService.getPlanByPatientAndTitle(
         selectedPatient.id,
         selectedPlanTitle
       );
       setPlanItems(items);
-      
-      // Carica riepilogo
+
       const summary = await dietService.getPlanSummary(
         selectedPatient.id,
         selectedPlanTitle
       );
       setPlanSummary(summary);
-      
     } catch (err) {
       console.error('Errore nel caricamento del piano:', err);
       setPlanItems([]);
@@ -177,12 +189,13 @@ const DietPlans = () => {
     }
   };
 
+  // ---- Handlers ----
   const handleCreateItem = () => {
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       patientId: selectedPatient?.id || '',
-      title: selectedPlanTitle || '',
-    });
+      title: selectedPlanTitle || prev.title || '',
+    }));
     setSelectedItem(null);
     setCreateDialogOpen(true);
   };
@@ -190,8 +203,8 @@ const DietPlans = () => {
   const handleEditItem = (item) => {
     setFormData({
       ...item,
-      patientId: item.patientId || selectedPatient?.id,
-      title: item.title || selectedPlanTitle,
+      patientId: item.patientId || selectedPatient?.id || '',
+      title: item.title || selectedPlanTitle || '',
     });
     setSelectedItem(item);
     setEditDialogOpen(true);
@@ -204,20 +217,40 @@ const DietPlans = () => {
 
   const handleSaveItem = async () => {
     try {
+      if (!formData.patientId) {
+        enqueueSnackbar('Seleziona un paziente', { variant: 'warning' });
+        return;
+      }
+      if (!formData.title?.trim()) {
+        enqueueSnackbar('Inserisci il titolo del piano', { variant: 'warning' });
+        return;
+      }
+      if (!formData.foodId) {
+        enqueueSnackbar('Seleziona un alimento', { variant: 'warning' });
+        return;
+      }
+
       if (selectedItem) {
-        // Aggiorna elemento esistente
         await dietService.updateElement(selectedItem.id, formData);
         enqueueSnackbar('Elemento aggiornato con successo', { variant: 'success' });
       } else {
-        // Crea nuovo elemento
         await dietService.createElement(formData);
         enqueueSnackbar('Elemento creato con successo', { variant: 'success' });
       }
-      
+
+      // se ho creato il primo elemento con un nuovo titolo, aggiorna subito i titoli
+      if (!planTitles.includes(formData.title)) {
+        setPlanTitles(t => [...t, formData.title]);
+      }
+      if (!selectedPlanTitle || selectedPlanTitle !== formData.title) {
+        setSelectedPlanTitle(formData.title);
+      }
+
       setCreateDialogOpen(false);
       setEditDialogOpen(false);
-      loadPlanData(); // Ricarica i dati
-    } catch{
+      await loadPlanData();
+    } catch (err) {
+      console.error('Errore nel salvataggio:', err);
       enqueueSnackbar('Errore nel salvataggio', { variant: 'error' });
     }
   };
@@ -227,14 +260,16 @@ const DietPlans = () => {
       await dietService.deleteElement(selectedItem.id);
       enqueueSnackbar('Elemento eliminato con successo', { variant: 'success' });
       setDeleteDialogOpen(false);
-      loadPlanData();
-    } catch{
-      enqueueSnackbar('Errore nell\'eliminazione', { variant: 'error' });
+      await loadPlanData();
+    } catch (err) {
+      console.error('Errore eliminazione elemento:', err);
+      enqueueSnackbar("Errore nell'eliminazione", { variant: 'error' });
     }
   };
 
   const handleDuplicatePlan = async (newTitle) => {
     try {
+      if (!newTitle?.trim()) return;
       await dietService.duplicatePlan(
         selectedPatient.id,
         selectedPlanTitle,
@@ -242,8 +277,11 @@ const DietPlans = () => {
       );
       enqueueSnackbar('Piano duplicato con successo', { variant: 'success' });
       setDuplicateDialogOpen(false);
-      loadPlanTitles();
-    } catch{
+      setSelectedPlanTitle(newTitle);
+      await loadPlanTitles();
+      await loadPlanData();
+    } catch (err) {
+      console.error('Errore nella duplicazione:', err);
       enqueueSnackbar('Errore nella duplicazione', { variant: 'error' });
     }
   };
@@ -253,34 +291,34 @@ const DietPlans = () => {
       await dietService.deletePlan(selectedPatient.id, selectedPlanTitle);
       enqueueSnackbar('Piano eliminato con successo', { variant: 'success' });
       setSelectedPlanTitle('');
-      loadPlanTitles();
-    } catch{
-      enqueueSnackbar('Errore nell\'eliminazione del piano', { variant: 'error' });
+      setPlanItems([]);
+      setPlanSummary(null);
+      await loadPlanTitles();
+    } catch (err) {
+      console.error("Errore nell'eliminazione del piano:", err);
+      enqueueSnackbar("Errore nell'eliminazione del piano", { variant: 'error' });
     }
   };
 
   const handleFoodSelect = (food) => {
     if (food) {
+      const factor = (Number(formData.quantity) || 0) / 100;
       setFormData({
         ...formData,
         foodId: food.id,
         foodName: food.name,
-        calories: food.calories * (formData.quantity / 100),
-        proteins: food.protein * (formData.quantity / 100),
-        carbs: food.carbs * (formData.quantity / 100),
-        fats: food.fat * (formData.quantity / 100),
+        calories: (food.calories || 0) * factor,
+        proteins: (food.protein || 0) * factor,
+        carbs: (food.carbs || 0) * factor,
+        fats: (food.fat || 0) * factor,
       });
+    } else {
+      setFormData({ ...formData, foodId: '', foodName: '' });
     }
   };
 
-  const getItemsByDay = (dayIndex) => {
-    return planItems.filter(item => item.dayOfWeek === dayIndex);
-  };
-
-  const getItemsByMealType = (mealType) => {
-    return planItems.filter(item => item.mealType === mealType);
-  };
-
+  const getItemsByDay = (dayIndex) => planItems.filter(item => item.dayOfWeek === dayIndex);
+  const getItemsByMealType = (mealType) => planItems.filter(item => item.mealType === mealType);
 
   if (loading && !planItems.length) {
     return (
@@ -307,14 +345,16 @@ const DietPlans = () => {
             variant="contained"
             startIcon={<Add />}
             onClick={handleCreateItem}
-            disabled={!selectedPatient || !selectedPlanTitle}
+            disabled={!selectedPatient} // sbloccato: basta il paziente
           >
             Aggiungi Elemento
           </Button>
           <Tooltip title="Aggiorna">
-            <IconButton onClick={loadPlanData}>
-              <Refresh />
-            </IconButton>
+            <span>
+              <IconButton onClick={loadPlanData} disabled={!selectedPatient || !selectedPlanTitle}>
+                <Refresh />
+              </IconButton>
+            </span>
           </Tooltip>
         </Box>
       </Box>
@@ -333,7 +373,12 @@ const DietPlans = () => {
               options={patients}
               getOptionLabel={(option) => `${option.nome} ${option.cognome}`}
               value={selectedPatient}
-              onChange={(e, newValue) => setSelectedPatient(newValue)}
+              onChange={(e, newValue) => {
+                setSelectedPatient(newValue);
+                setSelectedPlanTitle('');
+                setPlanItems([]);
+                setPlanSummary(null);
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -612,12 +657,26 @@ const DietPlans = () => {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
+            {/* Titolo Piano: mostrato solo se non c'è un piano selezionato */}
+            {!selectedPlanTitle && (
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Titolo Piano"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                  helperText="Obbligatorio per creare il primo piano"
+                />
+              </Grid>
+            )}
+
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
                 <InputLabel>Giorno</InputLabel>
                 <Select
                   value={formData.dayOfWeek}
-                  onChange={(e) => setFormData({...formData, dayOfWeek: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, dayOfWeek: e.target.value })}
                   label="Giorno"
                 >
                   {[1, 2, 3, 4, 5, 6, 7].map((day) => (
@@ -634,7 +693,7 @@ const DietPlans = () => {
                 <InputLabel>Tipo Pasto</InputLabel>
                 <Select
                   value={formData.mealType}
-                  onChange={(e) => setFormData({...formData, mealType: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, mealType: e.target.value })}
                   label="Tipo Pasto"
                 >
                   {Object.keys(dietService.MEAL_TYPES).map((type) => (
@@ -668,7 +727,7 @@ const DietPlans = () => {
                 label="Quantità"
                 type="number"
                 value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: parseFloat(e.target.value)})}
+                onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
                 InputProps={{
                   inputProps: { min: 0 }
                 }}
@@ -680,7 +739,7 @@ const DietPlans = () => {
                 <InputLabel>Unità</InputLabel>
                 <Select
                   value={formData.unit}
-                  onChange={(e) => setFormData({...formData, unit: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                   label="Unità"
                 >
                   <MenuItem value="g">grammi (g)</MenuItem>
@@ -698,7 +757,7 @@ const DietPlans = () => {
                 multiline
                 rows={2}
                 value={formData.notes}
-                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               />
             </Grid>
             
@@ -793,7 +852,8 @@ const DietPlans = () => {
             fullWidth
             label="Nuovo Titolo"
             sx={{ mt: 2 }}
-            onChange={(e) => setFormData({...formData, title: e.target.value})}
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           />
         </DialogContent>
         <DialogActions>
