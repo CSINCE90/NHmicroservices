@@ -54,6 +54,10 @@ public class Paziente {
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
+    // NUOVO CAMPO: Email dell'utente che ha creato il paziente
+    @Column(name = "created_by", nullable = false, length = 100)
+    private String createdBy;
+
     @CreationTimestamp
     @Column(name = "data_creazione", nullable = false, updatable = false)
     private LocalDateTime dataCreazione;

@@ -24,6 +24,9 @@ public class PazienteDTO {
     private String obiettivo;
     private String note;
     
+    // NUOVO CAMPO: Email dell'utente che ha creato il paziente  
+    private String createdBy;
+    
     // Metadati
     private LocalDateTime dataCreazione;
     private LocalDateTime dataModifica;

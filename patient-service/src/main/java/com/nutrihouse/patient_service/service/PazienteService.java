@@ -4,6 +4,8 @@ import com.nutrihouse.patient_service.model.Paziente;
 import com.nutrihouse.patient_service.repository.PazienteRepository;
 import com.nutrihouse.patient_service.dto.PazienteDTO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,13 +18,110 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PazienteService {
 
     private final PazienteRepository pazienteRepository;
 
     @Transactional
+    public PazienteDTO createPaziente(PazienteDTO pazienteDTO) {
+        log.info("Creazione nuovo paziente: {}", pazienteDTO.getEmail());
+        
+        // Verifica che l'email non sia già in uso
+        if (pazienteRepository.existsByEmail(pazienteDTO.getEmail())) {
+            throw new IllegalArgumentException("Email già in uso: " + pazienteDTO.getEmail());
+        }
+        
+        // Imposta automaticamente chi ha creato il paziente
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        pazienteDTO.setCreatedBy(currentUserEmail);
+        
+        Paziente paziente = toEntity(pazienteDTO);
+        Paziente saved = pazienteRepository.save(paziente);
+        
+        log.info("Paziente creato con successo - ID: {}, creato da: {}", saved.getId(), currentUserEmail);
+        return toDTO(saved);
+    }
+
+    @Transactional
+    public Optional<PazienteDTO> updatePaziente(Long id, PazienteDTO pazienteDTO) {
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("Aggiornamento paziente ID: {} da parte di: {}", id, currentUserEmail);
+        
+        return pazienteRepository.findByIdAndCreatedBy(id, currentUserEmail)
+                .map(existing -> {
+                    // Verifica email univoca se è cambiata
+                    if (!existing.getEmail().equals(pazienteDTO.getEmail()) &&
+                        pazienteRepository.existsByEmail(pazienteDTO.getEmail())) {
+                        throw new IllegalArgumentException("Email già in uso: " + pazienteDTO.getEmail());
+                    }
+                    
+                    // Mantieni il createdBy originale (non deve cambiare)
+                    pazienteDTO.setCreatedBy(existing.getCreatedBy());
+                    
+                    updateEntityFromDTO(existing, pazienteDTO);
+                    Paziente updated = pazienteRepository.save(existing);
+                    
+                    log.info("Paziente aggiornato con successo - ID: {}", id);
+                    return toDTO(updated);
+                });
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<PazienteDTO> getPazienteById(Long id) {
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.debug("Richiesta paziente ID: {} da parte di: {}", id, currentUserEmail);
+        
+        return pazienteRepository.findByIdAndCreatedBy(id, currentUserEmail)
+                .map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PazienteDTO> getAllPazienti() {
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.debug("Richiesta lista pazienti da parte di: {}", currentUserEmail);
+        
+        return pazienteRepository.findByCreatedByOrderByDataCreazioneDesc(currentUserEmail)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PazienteDTO> searchPazienti(String searchTerm) {
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.debug("Ricerca pazienti '{}' da parte di: {}", searchTerm, currentUserEmail);
+        
+        return pazienteRepository.searchPazientiByUser(currentUserEmail, searchTerm)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public boolean deletePaziente(Long id) {
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("Eliminazione paziente ID: {} da parte di: {}", id, currentUserEmail);
+        
+        Optional<Paziente> pazienteOpt = pazienteRepository.findByIdAndCreatedBy(id, currentUserEmail);
+        
+        if (pazienteOpt.isPresent()) {
+            pazienteRepository.deleteById(id);
+            log.info("Paziente eliminato con successo - ID: {}", id);
+            return true;
+        } else {
+            log.warn("Tentativo di eliminazione paziente non autorizzato - ID: {}, Utente: {}", id, currentUserEmail);
+            return false;
+        }
+    }
+
+    @Transactional(readOnly = true)
     public com.nutrihouse.patient_service.controller.PazienteController.PazienteStatsDTO getStatistiche() {
-        List<Paziente> pazienti = pazienteRepository.findAll();
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.debug("Richiesta statistiche da parte di: {}", currentUserEmail);
+        
+        // Statistiche solo sui pazienti dell'utente corrente
+        List<Paziente> pazienti = pazienteRepository.findByCreatedByOrderByDataCreazioneDesc(currentUserEmail);
 
         long totale = pazienti.size();
         long maschi = pazienti.stream()
@@ -57,62 +156,11 @@ public class PazienteService {
                 .build();
     }
 
-    @Transactional
-    public PazienteDTO createPaziente(PazienteDTO pazienteDTO) {
-        // Verifica che l'email non sia già in uso
-        if (pazienteRepository.existsByEmail(pazienteDTO.getEmail())) {
-            throw new IllegalArgumentException("Email già in uso: " + pazienteDTO.getEmail());
-        }
-        
-        Paziente paziente = toEntity(pazienteDTO);
-        Paziente saved = pazienteRepository.save(paziente);
-        return toDTO(saved);
-    }
-
-    @Transactional
-    public Optional<PazienteDTO> updatePaziente(Long id, PazienteDTO pazienteDTO) {
-        return pazienteRepository.findById(id).map(existing -> {
-            // Verifica email univoca se è cambiata
-            if (!existing.getEmail().equals(pazienteDTO.getEmail()) &&
-                pazienteRepository.existsByEmail(pazienteDTO.getEmail())) {
-                throw new IllegalArgumentException("Email già in uso: " + pazienteDTO.getEmail());
-            }
-            
-            updateEntityFromDTO(existing, pazienteDTO);
-            Paziente updated = pazienteRepository.save(existing);
-            return toDTO(updated);
-        });
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<PazienteDTO> getPazienteById(Long id) {
-        return pazienteRepository.findById(id).map(this::toDTO);
-    }
-
-    @Transactional(readOnly = true)
-    public List<PazienteDTO> getAllPazienti() {
-        return pazienteRepository.findAll()
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public List<PazienteDTO> searchPazienti(String searchTerm) {
-        return pazienteRepository.findByNomeContainingIgnoreCaseOrCognomeContainingIgnoreCaseOrEmailContainingIgnoreCase(
-                searchTerm, searchTerm, searchTerm)
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public boolean deletePaziente(Long id) {
-        if (pazienteRepository.existsById(id)) {
-            pazienteRepository.deleteById(id);
-            return true;
-        }
-        return false;
+    // Metodo per verificare se un paziente è di proprietà dell'utente corrente
+    // (utile per altri servizi)
+    public boolean isPazienteOwnedByCurrentUser(Long pazienteId) {
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return pazienteRepository.findByIdAndCreatedBy(pazienteId, currentUserEmail).isPresent();
     }
 
     // --- Mapping methods ---
@@ -129,6 +177,7 @@ public class PazienteService {
         dto.setPeso(entity.getPeso());
         dto.setObiettivo(entity.getObiettivo());
         dto.setNote(entity.getNote());
+        dto.setCreatedBy(entity.getCreatedBy());
         dto.setDataCreazione(entity.getDataCreazione());
         dto.setDataModifica(entity.getDataModifica());
         
@@ -153,6 +202,7 @@ public class PazienteService {
                 .peso(dto.getPeso())
                 .obiettivo(dto.getObiettivo())
                 .note(dto.getNote())
+                .createdBy(dto.getCreatedBy())
                 // Retrocompatibilità
                 .fullName(dto.getFullName())
                 .codiceFiscale(dto.getCodiceFiscale())
@@ -171,6 +221,7 @@ public class PazienteService {
         entity.setPeso(dto.getPeso());
         entity.setObiettivo(dto.getObiettivo());
         entity.setNote(dto.getNote());
+        // NON aggiornare createdBy per sicurezza
         
         // Retrocompatibilità
         if (dto.getFullName() != null) {
