@@ -1,5 +1,6 @@
 import api from './api';
 import { PATIENT_API_URL } from '../utils/constants';
+import dayjs from 'dayjs';
 
 export const patientService = {
   // Pazienti
@@ -14,7 +15,20 @@ export const patientService = {
   },
 
   createPatient: async (patientData) => {
-    const response = await api.post(`${PATIENT_API_URL}/pazienti/create`, patientData);
+    // Normalizzazione dati per il DTO backend
+    const payload = {
+      ...patientData,
+      // LocalDate in ISO (YYYY-MM-DD) per Spring
+      dataNascita: patientData?.dataNascita
+        ? dayjs(patientData.dataNascita).format('YYYY-MM-DD')
+        : null,
+      // Converte valori UI (Maschio/Femmina, M/F, m/f) in 'M'/'F'
+      sesso: typeof patientData?.sesso === 'string'
+        ? (patientData.sesso.trim().toLowerCase().startsWith('m') ? 'M' : 'F')
+        : patientData?.sesso,
+    };
+
+    const response = await api.post(`${PATIENT_API_URL}/pazienti/create`, payload);
     return response.data;
   },
 
