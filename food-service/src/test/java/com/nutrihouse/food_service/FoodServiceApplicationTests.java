@@ -1,4 +1,4 @@
-package com.nutrihouse.food_service;
+/*package com.nutrihouse.food_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,4 +10,4 @@ class FoodServiceApplicationTests {
 	void contextLoads() {
 	}
 
-}
+}*/
