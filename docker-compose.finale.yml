@@ -1,0 +1,79 @@
+version: "3.9"
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Francesco90
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./docker/mysql/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    networks:
+      - nh-network
+
+  auth-service:
+    image: fchifari32/nhmicroservices-auth-service:latest
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/authdb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Francesco90
+    depends_on:
+      - mysql
+    networks:
+      - nh-network
+
+  patient-service:
+    image: fchifari32/nhmicroservices-patient-service:latest
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/patientdb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Francesco90
+    depends_on:
+      - mysql
+    networks:
+      - nh-network
+
+  diet-service:
+    image: fchifari32/nhmicroservices-diet-service:latest
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/dietdb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Francesco90
+    depends_on:
+      - mysql
+    networks:
+      - nh-network
+
+  food-service:
+    image: fchifari32/nhmicroservices-food-service:latest
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/fooddb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Francesco90
+    depends_on:
+      - mysql
+    networks:
+      - nh-network
+
+  eureka-server:
+    image: fchifari32/nhmicroservices-eureka-server:latest
+    networks:
+      - nh-network
+
+  frontend:
+    image: fchifari32/nhmicroservices-frontend:latest
+    ports:
+      - "5173:80"
+    depends_on:
+      - auth-service
+      - patient-service
+      - diet-service
+      - food-service
+      - eureka-server
+    networks:
+      - nh-network
+
+networks:
+  nh-network:
+    driver: bridge
