@@ -1,85 +1,36 @@
-# frontend/Dockerfile
-# Multi-stage build per ottimizzare le dimensioni dell'immagine
-
-# ==========================================
-# Stage 1: Build dell'applicazione
-# ==========================================
-FROM node:18-alpine AS builder
-
-LABEL maintainer="Francesco - NutriHouse Team"
-LABEL description="Frontend Build Stage"
-
-# Imposta la directory di lavoro
+# ---- STAGE 1: build (Vite) ----
+FROM node:20-alpine AS build
 WORKDIR /app
 
-# Copia i file di configurazione delle dipendenze
-COPY package.json package-lock.json ./
+# cache migliore
+COPY package.json package-lock.json* ./
+RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
 
-# Installa le dipendenze
-RUN npm ci --only=production --silent
-
-# Copia tutto il codice sorgente
+# sorgenti
 COPY . .
 
-# Argomenti per configurazione build-time
-ARG REACT_APP_API_BASE_URL=http://localhost
-ARG REACT_APP_AUTH_SERVICE_URL=http://localhost/api/auth
-ARG REACT_APP_PATIENT_SERVICE_URL=http://localhost/api/pazienti
-ARG REACT_APP_FOOD_SERVICE_URL=http://localhost/api/foods
-ARG REACT_APP_DIET_SERVICE_URL=http://localhost/api/diet-plans
+# variabili per Vite (devono iniziare con VITE_)
+ARG VITE_API_BASE_URL=/
+ARG VITE_AUTH_SERVICE_URL=/api/auth
+ARG VITE_PATIENT_SERVICE_URL=/api/pazienti
+ARG VITE_FOOD_SERVICE_URL=/api/foods
+ARG VITE_DIET_SERVICE_URL=/api/diet-plans
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL} \
+    VITE_AUTH_SERVICE_URL=${VITE_AUTH_SERVICE_URL} \
+    VITE_PATIENT_SERVICE_URL=${VITE_PATIENT_SERVICE_URL} \
+    VITE_FOOD_SERVICE_URL=${VITE_FOOD_SERVICE_URL} \
+    VITE_DIET_SERVICE_URL=${VITE_DIET_SERVICE_URL}
 
-# Imposta le variabili d'ambiente per il build
-ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
-ENV REACT_APP_AUTH_SERVICE_URL=$REACT_APP_AUTH_SERVICE_URL
-ENV REACT_APP_PATIENT_SERVICE_URL=$REACT_APP_PATIENT_SERVICE_URL
-ENV REACT_APP_FOOD_SERVICE_URL=$REACT_APP_FOOD_SERVICE_URL
-ENV REACT_APP_DIET_SERVICE_URL=$REACT_APP_DIET_SERVICE_URL
-
-# Build dell'applicazione per produzione
+# build produzione => dist/
 RUN npm run build
 
-# ==========================================
-# Stage 2: Nginx per servire l'app
-# ==========================================
-FROM nginx:alpine AS production
-
-LABEL maintainer="Francesco - NutriHouse Team"
-LABEL description="NutriHouse Frontend - Production"
-
-# Installa curl per health checks
-RUN apk add --no-cache curl
-
-# Rimuovi la configurazione di default di nginx
-RUN rm /etc/nginx/conf.d/default.conf
-
-# Copia la configurazione nginx personalizzata
-COPY nginx.conf /etc/nginx/conf.d/
-
-# Copia i file buildati dal stage precedente
-COPY --from=builder /app/build /usr/share/nginx/html
-
-# Copia script di avvio personalizzato (opzionale)
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
-
-# Crea utente non-root per sicurezza
-RUN addgroup -g 101 -S nginx && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
-
-# Imposta ownership dei file
-RUN chown -R nginx:nginx /usr/share/nginx/html
-RUN chown -R nginx:nginx /var/cache/nginx
-RUN chown -R nginx:nginx /etc/nginx
-
-# Espone la porta 80
+# ---- STAGE 2: runtime (nginx) ----
+FROM nginx:1.27-alpine
+# usa il tuo nginx.conf (quello con i blocchi /api/…)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+# ATTENZIONE: Vite produce dist/
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost/health || exit 1
-
-# Usa utente non-root
-USER nginx
-
-# Script di avvio
-ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["nginx", "-g", "daemon off;"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+  CMD wget -q --spider http://localhost/ || exit 1
+CMD ["nginx","-g","daemon off;"]

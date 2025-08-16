@@ -1,0 +1,18 @@
+
+
+-- Create required databases if they don't exist
+CREATE DATABASE IF NOT EXISTS authdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS patientdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS fooddb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS dietdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Optional test output
+SELECT 'Databases created successfully!' AS message;
+
+-- Grant privileges to root for remote access
+GRANT ALL PRIVILEGES ON authdb.* TO 'root'@'%' IDENTIFIED BY 'Francesco90';
+GRANT ALL PRIVILEGES ON patientdb.* TO 'root'@'%' IDENTIFIED BY 'Francesco90';
+GRANT ALL PRIVILEGES ON fooddb.* TO 'root'@'%' IDENTIFIED BY 'Francesco90';
+GRANT ALL PRIVILEGES ON dietdb.* TO 'root'@'%' IDENTIFIED BY 'Francesco90';
+
+FLUSH PRIVILEGES;
