@@ -37,6 +37,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Stack,
 } from '@mui/material';
 import {
   Add,
@@ -656,10 +657,11 @@ const DietPlans = () => {
           {selectedItem ? 'Modifica Elemento' : 'Nuovo Elemento'}
         </DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            {/* Titolo Piano: mostrato solo se non c'è un piano selezionato */}
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            {/* Titolo Piano */}
             {!selectedPlanTitle && (
-              <Grid item xs={12} sm={6}>
+              <Box>
+                <Typography variant="h6" gutterBottom>Titolo Piano</Typography>
                 <TextField
                   fullWidth
                   label="Titolo Piano"
@@ -668,44 +670,47 @@ const DietPlans = () => {
                   required
                   helperText="Obbligatorio per creare il primo piano"
                 />
-              </Grid>
+              </Box>
             )}
 
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Giorno</InputLabel>
-                <Select
-                  value={formData.dayOfWeek}
-                  onChange={(e) => setFormData({ ...formData, dayOfWeek: e.target.value })}
-                  label="Giorno"
-                >
-                  {[1, 2, 3, 4, 5, 6, 7].map((day) => (
-                    <MenuItem key={day} value={day}>
-                      {dietService.getDayName(day)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Tipo Pasto</InputLabel>
-                <Select
-                  value={formData.mealType}
-                  onChange={(e) => setFormData({ ...formData, mealType: e.target.value })}
-                  label="Tipo Pasto"
-                >
-                  {Object.keys(dietService.MEAL_TYPES).map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {dietService.getMealTypeName(type)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12}>
+            {/* Giorno e Tipo Pasto */}
+            <Box>
+              <Typography variant="h6" gutterBottom>Dettagli Piano</Typography>
+              <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
+                <FormControl fullWidth>
+                  <InputLabel>Giorno</InputLabel>
+                  <Select
+                    value={formData.dayOfWeek}
+                    onChange={(e) => setFormData({ ...formData, dayOfWeek: e.target.value })}
+                    label="Giorno"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+                      <MenuItem key={day} value={day}>
+                        {dietService.getDayName(day)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth>
+                  <InputLabel>Tipo Pasto</InputLabel>
+                  <Select
+                    value={formData.mealType}
+                    onChange={(e) => setFormData({ ...formData, mealType: e.target.value })}
+                    label="Tipo Pasto"
+                  >
+                    {Object.keys(dietService.MEAL_TYPES).map((type) => (
+                      <MenuItem key={type} value={type}>
+                        {dietService.getMealTypeName(type)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Stack>
+            </Box>
+
+            {/* Alimento */}
+            <Box>
+              <Typography variant="h6" gutterBottom>Alimento</Typography>
               <Autocomplete
                 options={foods}
                 getOptionLabel={(option) => option.name}
@@ -719,53 +724,57 @@ const DietPlans = () => {
                   />
                 )}
               />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
+            </Box>
+
+            {/* Quantità e Unità */}
+            <Box>
+              <Typography variant="h6" gutterBottom>Quantità</Typography>
+              <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
+                <TextField
+                  fullWidth
+                  label="Quantità"
+                  type="number"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
+                  InputProps={{
+                    inputProps: { min: 0 }
+                  }}
+                />
+                <FormControl fullWidth>
+                  <InputLabel>Unità</InputLabel>
+                  <Select
+                    value={formData.unit}
+                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    label="Unità"
+                  >
+                    <MenuItem value="g">grammi (g)</MenuItem>
+                    <MenuItem value="ml">millilitri (ml)</MenuItem>
+                    <MenuItem value="pz">pezzi</MenuItem>
+                    <MenuItem value="porzione">porzione</MenuItem>
+                  </Select>
+                </FormControl>
+              </Stack>
+            </Box>
+
+            {/* Note */}
+            <Box>
+              <Typography variant="h6" gutterBottom>Note</Typography>
               <TextField
                 fullWidth
-                label="Quantità"
-                type="number"
-                value={formData.quantity}
-                onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
-                InputProps={{
-                  inputProps: { min: 0 }
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Unità</InputLabel>
-                <Select
-                  value={formData.unit}
-                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  label="Unità"
-                >
-                  <MenuItem value="g">grammi (g)</MenuItem>
-                  <MenuItem value="ml">millilitri (ml)</MenuItem>
-                  <MenuItem value="pz">pezzi</MenuItem>
-                  <MenuItem value="porzione">porzione</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Note"
                 multiline
                 rows={2}
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               />
-            </Grid>
-            
+            </Box>
+
+            {/* Valori nutrizionali */}
             {formData.foodId && (
-              <Grid item xs={12}>
+              <Box>
+                <Typography variant="h6" gutterBottom>Valori Nutrizionali</Typography>
                 <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    Valori Nutrizionali per {formData.quantity}{formData.unit}:
+                    Per {formData.quantity}{formData.unit}:
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={3}>
@@ -790,9 +799,9 @@ const DietPlans = () => {
                     </Grid>
                   </Grid>
                 </Paper>
-              </Grid>
+              </Box>
             )}
-          </Grid>
+          </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => {

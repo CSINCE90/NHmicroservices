@@ -25,6 +25,7 @@ import {
   Chip,
   IconButton,
   Tooltip,
+  Stack,
 } from '@mui/material';
 import {
   Add,
@@ -249,100 +250,91 @@ const Patients = () => {
 
       {/* Filters and Search */}
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              placeholder="Cerca pazienti..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth>
-              <InputLabel>Ordina per</InputLabel>
-              <Select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                label="Ordina per"
+        <Stack spacing={2}>
+          <TextField
+            fullWidth
+            placeholder="Cerca pazienti..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          <FormControl fullWidth>
+            <InputLabel>Ordina per</InputLabel>
+            <Select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              label="Ordina per"
+            >
+              <MenuItem value="nome">Nome</MenuItem>
+              <MenuItem value="dataCreazione">Data creazione</MenuItem>
+              <MenuItem value="eta">Età</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth>
+            <InputLabel>Filtra</InputLabel>
+            <Select
+              value={filterBy}
+              onChange={(e) => setFilterBy(e.target.value)}
+              label="Filtra"
+            >
+              <MenuItem value="all">Tutti</MenuItem>
+              <MenuItem value="recent">Recenti</MenuItem>
+              <MenuItem value="male">Maschi</MenuItem>
+              <MenuItem value="female">Femmine</MenuItem>
+            </Select>
+          </FormControl>
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+            <Tooltip title="Aggiorna">
+              <IconButton onClick={loadPatients}>
+                <Refresh />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Vista griglia">
+              <IconButton 
+                onClick={() => setViewMode('grid')}
+                color={viewMode === 'grid' ? 'primary' : 'default'}
               >
-                <MenuItem value="nome">Nome</MenuItem>
-                <MenuItem value="dataCreazione">Data creazione</MenuItem>
-                <MenuItem value="eta">Età</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth>
-              <InputLabel>Filtra</InputLabel>
-              <Select
-                value={filterBy}
-                onChange={(e) => setFilterBy(e.target.value)}
-                label="Filtra"
+                <ViewModule />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Vista lista">
+              <IconButton 
+                onClick={() => setViewMode('list')}
+                color={viewMode === 'list' ? 'primary' : 'default'}
               >
-                <MenuItem value="all">Tutti</MenuItem>
-                <MenuItem value="recent">Recenti</MenuItem>
-                <MenuItem value="male">Maschi</MenuItem>
-                <MenuItem value="female">Femmine</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} md={4}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-              <Tooltip title="Aggiorna">
-                <IconButton onClick={loadPatients}>
-                  <Refresh />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Vista griglia">
-                <IconButton 
-                  onClick={() => setViewMode('grid')}
-                  color={viewMode === 'grid' ? 'primary' : 'default'}
-                >
-                  <ViewModule />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Vista lista">
-                <IconButton 
-                  onClick={() => setViewMode('list')}
-                  color={viewMode === 'list' ? 'primary' : 'default'}
-                >
-                  <ViewList />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Grid>
-        </Grid>
-        
-        {/* Active filters */}
-        {(searchTerm || filterBy !== 'all') && (
-          <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {searchTerm && (
-              <Chip
-                label={`Ricerca: "${searchTerm}"`}
-                onDelete={() => setSearchTerm('')}
-                size="small"
-              />
-            )}
-            {filterBy !== 'all' && (
-              <Chip
-                label={`Filtro: ${getFilterChipLabel()}`}
-                onDelete={() => setFilterBy('all')}
-                size="small"
-              />
-            )}
+                <ViewList />
+              </IconButton>
+            </Tooltip>
           </Box>
-        )}
+
+          {(searchTerm || filterBy !== 'all') && (
+            <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              {searchTerm && (
+                <Chip
+                  label={`Ricerca: "${searchTerm}"`}
+                  onDelete={() => setSearchTerm('')}
+                  size="small"
+                />
+              )}
+              {filterBy !== 'all' && (
+                <Chip
+                  label={`Filtro: ${getFilterChipLabel()}`}
+                  onDelete={() => setFilterBy('all')}
+                  size="small"
+                />
+              )}
+            </Box>
+          )}
+        </Stack>
       </Paper>
 
       {/* Patients Grid/List */}
@@ -382,16 +374,125 @@ const Patients = () => {
       )}
 
       {/* Patient Form Dialog */}
-      <PatientForm
-        open={formOpen}
-        onClose={() => {
-          setFormOpen(false);
-          setSelectedPatient(null);
-        }}
-        onSubmit={handleFormSubmit}
-        patient={selectedPatient}
-        loading={formLoading}
-      />
+      <Dialog open={formOpen} onClose={() => {
+        setFormOpen(false);
+        setSelectedPatient(null);
+      }} fullWidth maxWidth="sm">
+        <DialogTitle>
+          {selectedPatient ? "Modifica Paziente" : "Nuovo Paziente"}
+        </DialogTitle>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          const formData = new FormData(e.currentTarget);
+          const data = Object.fromEntries(formData.entries());
+          handleFormSubmit(data);
+        }}>
+          <DialogContent>
+            <Stack spacing={3}>
+              {/* Informazioni Personali */}
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Informazioni Personali
+                </Typography>
+                <Stack spacing={2}>
+                  <TextField name="nome" label="Nome *" defaultValue={selectedPatient?.nome} fullWidth />
+                  <TextField name="cognome" label="Cognome *" defaultValue={selectedPatient?.cognome} fullWidth />
+                  <TextField
+                    name="dataNascita"
+                    label="Data di Nascita *"
+                    placeholder="gg/mm/aaaa"
+                    defaultValue={
+                      selectedPatient?.dataNascita
+                        ? new Date(selectedPatient.dataNascita).toLocaleDateString('it-IT')
+                        : ''
+                    }
+                    fullWidth
+                    onBlur={(e) => {
+                      const value = e.target.value;
+                      const parts = value.split('/');
+                      if (parts.length === 3) {
+                        const [giorno, mese, anno] = parts;
+                        if (giorno && mese && anno) {
+                          e.target.value = `${anno}-${mese.padStart(2,'0')}-${giorno.padStart(2,'0')}`;
+                        }
+                      }
+                    }}
+                  />
+                  <FormControl fullWidth>
+                    <InputLabel>Sesso</InputLabel>
+                    <Select name="sesso" defaultValue={selectedPatient?.sesso || ""}>
+                      <MenuItem value="M">Maschio</MenuItem>
+                      <MenuItem value="F">Femmina</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Stack>
+              </Box>
+
+              {/* Contatti */}
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Contatti
+                </Typography>
+                <Stack spacing={2}>
+                  <TextField name="email" label="Email" type="email" defaultValue={selectedPatient?.email} fullWidth />
+                  <TextField name="telefono" label="Telefono *" defaultValue={selectedPatient?.telefono} fullWidth />
+                </Stack>
+              </Box>
+
+              {/* Dati Fisici */}
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Dati Fisici
+                </Typography>
+                <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
+                  <TextField
+                    name="altezza"
+                    label="Altezza (cm)"
+                    type="number"
+                    defaultValue={selectedPatient?.altezza}
+                    fullWidth
+                  />
+                  <TextField
+                    name="peso"
+                    label="Peso (kg)"
+                    type="number"
+                    defaultValue={selectedPatient?.peso}
+                    fullWidth
+                  />
+                </Stack>
+              </Box>
+
+              {/* Obiettivi e Note */}
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Obiettivi e Note
+                </Typography>
+                <Stack spacing={2}>
+                  <TextField name="obiettivo" label="Obiettivo" defaultValue={selectedPatient?.obiettivo} fullWidth />
+                  <TextField
+                    name="note"
+                    label="Note"
+                    multiline
+                    rows={3}
+                    defaultValue={selectedPatient?.note}
+                    fullWidth
+                  />
+                </Stack>
+              </Box>
+            </Stack>
+          </DialogContent>
+
+          <DialogActions>
+            <Button onClick={() => {
+              setFormOpen(false);
+              setSelectedPatient(null);
+            }}>Annulla</Button>
+            <Button type="submit" variant="contained" color="primary" disabled={formLoading}>
+              {formLoading ? <CircularProgress size={24} /> : selectedPatient ? "Aggiorna" : "Crea"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog
